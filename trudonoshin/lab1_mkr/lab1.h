@@ -3,13 +3,14 @@
 #include <iomanip>
 #include "memalloc.h"
 #include "matrixgen.h"
+#include "laesolution.h"
 
 
 using namespace std;
 
 
-double deltaR = 2.0;
-double deltaFi = M_PI / 3;
+double deltaR = 0.25;
+double deltaFi = M_PI / 24;
 double R = 50.0;
 double r = 44.0;
 double robenConditionValue = 0.0;         //Числовые значения

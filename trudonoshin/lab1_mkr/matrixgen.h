@@ -14,6 +14,6 @@ extern double rightPartOfEquations;        //правая часть уравн�
 double * generateInnerUnitKoeffs(const double );
 int fillMatrixWithInnerKoeffs(const int , const int );
 int fillMatrixWithRobenKoeffs(const int , const int, const int );
-int fillMatrixWithNeumannKoeffs(const int , const int, const int );
-int fillMatrixWithDirichletKoeffs(const int , const int, const int );
+int fillMatrixWithNeumannKoeffs(const int , const int, const int, const int );
+int fillMatrixWithDirichletKoeffs(const int , const int, const int, const int );
 void fillMatrixWithKoeffs(const int , const int , const int );

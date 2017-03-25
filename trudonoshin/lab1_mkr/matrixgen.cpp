@@ -86,7 +86,7 @@ int fillMatrixWithRobenKoeffs(const int offset, const int unitsInCircle, const i
 }
 
 
-int fillMatrixWithNeumannKoeffs(const int offset, const int unitsInCircle, const int unitsAmount)
+int fillMatrixWithNeumannKoeffs(const int offset, const int unitsInWidth, const int unitsInCircle, const int unitsAmount)
 {
     int i, startPos;
     int rowOffset = offset;
@@ -97,7 +97,7 @@ int fillMatrixWithNeumannKoeffs(const int offset, const int unitsInCircle, const
     neumannKoeffs[0] = 1 / deltaR;  //T62, T72, ...
     neumannKoeffs[1] = -1 / deltaR; //T63, T73, ...
 
-    startPos = 2 * unitsInCircle;
+    startPos = (unitsInWidth - 2) * unitsInCircle;
 
     for(i = unitsOffset; i < unitsInCircle; i++, rowOffset++)
     {
@@ -112,21 +112,20 @@ int fillMatrixWithNeumannKoeffs(const int offset, const int unitsInCircle, const
 }
 
 
-int fillMatrixWithDirichletKoeffs(const int offset, const int unitsInCircle, const int unitsAmount)
+int fillMatrixWithDirichletKoeffs(const int offset, const int unitsInWidth, const int unitsInCircle, const int unitsAmount)
 {
-    int i, startPos, endPos;
+    int i, j, startPos, endPos;
     int rowOffset = offset;
-    int koeffPos_1;
     double dirichletKoeff = 1.0; //T03, T13, ...
 
 
-    startPos = 2 * unitsInCircle;
-    endPos = (int)(unitsInCircle / 2);
+    startPos = (unitsInWidth - 1) * unitsInCircle;
+    endPos = startPos + (int)(unitsInCircle / 2);
 
-    for(i = 0; i < endPos; i++, rowOffset++)
+    for(i = startPos; i < endPos; i++, rowOffset++)
     {
-        koeffPos_1 = i + startPos;
-        koeffMatrix[rowOffset][koeffPos_1] = dirichletKoeff;
+
+        koeffMatrix[rowOffset][i] = dirichletKoeff;
         koeffMatrix[rowOffset][unitsAmount] = dirichletConditionValue;
     }
 
@@ -140,6 +139,6 @@ void fillMatrixWithKoeffs(const int unitsInWidthAmount, const int unitsInCircleA
     
     rowOffset = fillMatrixWithInnerKoeffs(unitsInWidthAmount, unitsInCircleAmount);         //Уравнение теплопроводности для внутр. узлов
 	rowOffset = fillMatrixWithRobenKoeffs(rowOffset, unitsInCircleAmount, unitsAmount);     //ГУ 3 рода на внутр. границе трубки
-    rowOffset = fillMatrixWithNeumannKoeffs(rowOffset, unitsInCircleAmount, unitsAmount);   //ГУ 2 рода на внеш. границе нижней половины трубки
-    rowOffset = fillMatrixWithDirichletKoeffs(rowOffset, unitsInCircleAmount, unitsAmount); //ГУ 1 рода на внеш. границе верхней половины трубки
+    rowOffset = fillMatrixWithNeumannKoeffs(rowOffset, unitsInWidthAmount, unitsInCircleAmount, unitsAmount);   //ГУ 2 рода на внеш. границе нижней половины трубки
+    rowOffset = fillMatrixWithDirichletKoeffs(rowOffset, unitsInWidthAmount, unitsInCircleAmount, unitsAmount); //ГУ 1 рода на внеш. границе верхней половины трубки
 }
