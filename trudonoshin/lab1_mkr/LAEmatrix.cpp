@@ -1,21 +1,26 @@
 #include "LAEmatrix.h"
 
 
-LAEmatrix::LAEmatrix()
+LAEmatrix::LAEmatrix(int multiple)
 {
     int i, j;
+    double  dR, dFi;
 
-    unitsInWidthAmount = (int)((fabs(R - r) / deltaR) + 1);
-	unitsInCircleAmount = (int)((2 * M_PI) / deltaFi);
-	unitsAmount = unitsInWidthAmount * unitsInCircleAmount;
+    stepMultiple = multiple;
+    dR = deltaR / (double)(multiple);
+    dFi = deltaFi / (double)(multiple);
+    nodesInWidthAmount = (int)((fabs(R - r) / dR) + 1);
+	nodesInCircleAmount = (int)((2 * M_PI) / dFi);
+	nodesAmount = nodesInWidthAmount * nodesInCircleAmount;
 
-    LAEkoeffMatrix = new double * [unitsAmount];
+    solutionVector = NULL;
+    LAEkoeffMatrix = new double * [nodesAmount];
 
-	for(i = 0; i < unitsAmount; i++)
+	for(i = 0; i < nodesAmount; i++)
 	{
-		LAEkoeffMatrix[i] = new double [unitsAmount + 1];
+		LAEkoeffMatrix[i] = new double [nodesAmount + 1];
 
-		for(j = 0; j <= unitsAmount; j++)
+		for(j = 0; j <= nodesAmount; j++)
 			LAEkoeffMatrix[i][j] = 0;
 	}
 }
@@ -23,19 +28,20 @@ LAEmatrix::LAEmatrix()
 
 LAEmatrix::~LAEmatrix()
 {
-    int i;  
+    int i;
 
-	for(i = 0; i <= unitsAmount; i++)
+	for(i = 0; i <= nodesAmount; i++)
 		delete [] LAEkoeffMatrix[i];
 
 	delete [] LAEkoeffMatrix;
-    delete [] solutionVector;
+    if(solutionVector != NULL)
+        delete [] solutionVector;
 
-    unitsInWidthAmount = unitsInCircleAmount = unitsAmount = 0;
+    nodesInWidthAmount = nodesInCircleAmount = nodesAmount = 0;
 }
 
 
-double * LAEmatrix::generateInnerUnitKoeffs(const double radius)
+double * LAEmatrix::generateInnerNodeKoeffs(const double radius)
 {
     double *koeffs = new double [5];
 	double deltaR_2 = pow(deltaR, 2);
@@ -48,47 +54,47 @@ double * LAEmatrix::generateInnerUnitKoeffs(const double radius)
 	koeffs[3] = koeffs[2];	                //T_11_1
 	koeffs[4] = (2 * radius + deltaR) / (2 * radius * deltaR_2); //T_02
 
-	return koeffs;  
+	return koeffs;
 }
 
 
 int LAEmatrix::fillMatrixWithInnerKoeffs(int &offset)
 {
 	int j, i = 0;
-	int innerUnitsInWidth = unitsInWidthAmount - 2;
+	int innerNodesInWidth = nodesInWidthAmount - 2;
 	int koeffPos_1, koeffPos_2, koeffPos_3, koeffPos_4, koeffPos_5;
 	double radius = r;
-	double *innerUnitKoeffs;
+	double *innerNodeKoeffs;
 
-	for(j = 0; j < innerUnitsInWidth; j++)
+	for(j = 0; j < innerNodesInWidth; j++)
 	{
 		radius += deltaR;
-		innerUnitKoeffs = generateInnerUnitKoeffs(radius);
+		innerNodeKoeffs = generateInnerNodeKoeffs(radius);
 
-		for(i; i < ((j + 1) * unitsInCircleAmount); i++, offset++)
+		for(i; i < ((j + 1) * nodesInCircleAmount); i++, offset++)
 		{
 			koeffPos_1 = i;
-			koeffPos_2 = i + unitsInCircleAmount;
+			koeffPos_2 = i + nodesInCircleAmount;
 			koeffPos_3 = koeffPos_2 + 1;
 
-			if(koeffPos_3 >= ((j + 2) * unitsInCircleAmount))
-				koeffPos_3 -= unitsInCircleAmount;
+			if(koeffPos_3 >= ((j + 2) * nodesInCircleAmount))
+				koeffPos_3 -= nodesInCircleAmount;
 
 			koeffPos_4 = koeffPos_2 - 1;
 
-			if(koeffPos_4 < ((j + 1) * unitsInCircleAmount))
-				koeffPos_4 += unitsInCircleAmount;
+			if(koeffPos_4 < ((j + 1) * nodesInCircleAmount))
+				koeffPos_4 += nodesInCircleAmount;
 
-			koeffPos_5 = koeffPos_2 + unitsInCircleAmount;
+			koeffPos_5 = koeffPos_2 + nodesInCircleAmount;
 
-			LAEkoeffMatrix[offset][koeffPos_1] = innerUnitKoeffs[0];
-			LAEkoeffMatrix[offset][koeffPos_2] = innerUnitKoeffs[1];
-			LAEkoeffMatrix[offset][koeffPos_3] = innerUnitKoeffs[2];
-			LAEkoeffMatrix[offset][koeffPos_4] = innerUnitKoeffs[3];
-			LAEkoeffMatrix[offset][koeffPos_5] = innerUnitKoeffs[4];
-            LAEkoeffMatrix[offset][unitsAmount] = rightPartOfEquations;
+			LAEkoeffMatrix[offset][koeffPos_1] = innerNodeKoeffs[0];
+			LAEkoeffMatrix[offset][koeffPos_2] = innerNodeKoeffs[1];
+			LAEkoeffMatrix[offset][koeffPos_3] = innerNodeKoeffs[2];
+			LAEkoeffMatrix[offset][koeffPos_4] = innerNodeKoeffs[3];
+			LAEkoeffMatrix[offset][koeffPos_5] = innerNodeKoeffs[4];
+            LAEkoeffMatrix[offset][nodesAmount] = rightPartOfEquations;
 		}
-		delete [] innerUnitKoeffs;	
+		delete [] innerNodeKoeffs;
 	}
 
     return offset;
@@ -104,13 +110,13 @@ int LAEmatrix::fillMatrixWithRobenKoeffs(int &offset)
     robenKoeffs[0] = -(1 + deltaR) / deltaR; //T00, T10, ...
     robenKoeffs[1] = 1 / deltaR;             //T01, T11, ...
 
-    for(i = 0; i < unitsInCircleAmount; i++, offset++)
+    for(i = 0; i < nodesInCircleAmount; i++, offset++)
     {
         koeffPos_1 = i;
-	    koeffPos_2 = i + unitsInCircleAmount;
+	    koeffPos_2 = i + nodesInCircleAmount;
         LAEkoeffMatrix[offset][koeffPos_1] = robenKoeffs[0];
 		LAEkoeffMatrix[offset][koeffPos_2] = robenKoeffs[1];
-        LAEkoeffMatrix[offset][unitsAmount] = robenConditionValue;
+        LAEkoeffMatrix[offset][nodesAmount] = robenConditionValue;
     }
 
     return offset;
@@ -120,23 +126,23 @@ int LAEmatrix::fillMatrixWithRobenKoeffs(int &offset)
 int LAEmatrix::fillMatrixWithNeumannKoeffs(int &offset)
 {
     int i;
-    int startPos, unitsOffset;
+    int startPos, nodesOffset;
     int koeffPos_1, koeffPos_2;
     double neumannKoeffs[2];
 
     neumannKoeffs[0] = 1 / deltaR;  //T62, T72, ...
     neumannKoeffs[1] = -1 / deltaR; //T63, T73, ...
 
-    startPos = (unitsInWidthAmount - 2) * unitsInCircleAmount;
-    unitsOffset  = (int)(unitsInCircleAmount / 2);
+    startPos = (nodesInWidthAmount - 2) * nodesInCircleAmount;
+    nodesOffset  = (int)(nodesInCircleAmount / 2);
 
-    for(i = unitsOffset; i < unitsInCircleAmount; i++, offset++)
+    for(i = nodesOffset; i < nodesInCircleAmount; i++, offset++)
     {
         koeffPos_1 = i + startPos;
-        koeffPos_2 = koeffPos_1 + unitsInCircleAmount;
+        koeffPos_2 = koeffPos_1 + nodesInCircleAmount;
         LAEkoeffMatrix[offset][koeffPos_1] = neumannKoeffs[0];
 		LAEkoeffMatrix[offset][koeffPos_2] = neumannKoeffs[1];
-        LAEkoeffMatrix[offset][unitsAmount] = neumannConditionValue;
+        LAEkoeffMatrix[offset][nodesAmount] = neumannConditionValue;
     }
 
     return offset;
@@ -149,14 +155,14 @@ int LAEmatrix::fillMatrixWithDirichletKoeffs(int &offset)
     double dirichletKoeff = 1.0; //T03, T13, ...
 
 
-    startPos = (unitsInWidthAmount - 1) * unitsInCircleAmount;
-    endPos = startPos + (int)(unitsInCircleAmount / 2);
+    startPos = (nodesInWidthAmount - 1) * nodesInCircleAmount;
+    endPos = startPos + (int)(nodesInCircleAmount / 2);
 
     for(i = startPos; i < endPos; i++, offset++)
     {
 
         LAEkoeffMatrix[offset][i] = dirichletKoeff;
-        LAEkoeffMatrix[offset][unitsAmount] = dirichletConditionValue;
+        LAEkoeffMatrix[offset][nodesAmount] = dirichletConditionValue;
     }
 
     return offset;
@@ -166,7 +172,7 @@ int LAEmatrix::fillMatrixWithDirichletKoeffs(int &offset)
 void LAEmatrix::fillMatrixWithKoeffs()
 {
     int rowOffset = 0;
-    
+
     fillMatrixWithInnerKoeffs(rowOffset);         //Уравнение теплопроводности для внутр. узлов
 	fillMatrixWithRobenKoeffs(rowOffset);         //ГУ 3 рода на внутр. границе трубки
     fillMatrixWithNeumannKoeffs(rowOffset);       //ГУ 2 рода на внеш. границе нижней половины трубки
@@ -181,57 +187,95 @@ void LAEmatrix::gaussLAESolution()
     int currentRow;
     double gaussKoeff;
 
-    for(diagRow = 0, diagCol = 0; diagRow < unitsAmount && diagCol < unitsAmount; diagRow++, diagCol++)
+    for(diagRow = 0, diagCol = 0; diagRow < nodesAmount && diagCol < nodesAmount; diagRow++, diagCol++)
     {
         currentRow = diagRow;
-        
-        for(i = diagRow; i < unitsAmount; i++)
+
+        for(i = diagRow; i < nodesAmount; i++)
             if(fabs(LAEkoeffMatrix[i][diagCol]) > fabs(LAEkoeffMatrix[currentRow][diagCol]))
                 currentRow = i;
 
         if(currentRow != diagRow)
         {
-            for(j = diagCol; j <= unitsAmount; j++)
+            for(j = diagCol; j <= nodesAmount; j++)
             {
                 double tempElement = LAEkoeffMatrix[currentRow][j];
-                
+
                 LAEkoeffMatrix[currentRow][j] = LAEkoeffMatrix[diagRow][j];
                 LAEkoeffMatrix[diagRow][j] = tempElement;
             }
         }
 
-        for(i = 0; i < unitsAmount; i++)
+        for(i = 0; i < nodesAmount; i++)
         {
             if(i != diagRow)
             {
                 gaussKoeff = LAEkoeffMatrix[i][diagCol] / LAEkoeffMatrix[diagRow][diagCol];
-                for(j = 0; j <= unitsAmount; j++)
+                for(j = 0; j <= nodesAmount; j++)
                     LAEkoeffMatrix[i][j] -= LAEkoeffMatrix[diagRow][j] * gaussKoeff;
             }
         }
     }
 
-    solutionVector = new double [unitsAmount];
+    solutionVector = new double [nodesAmount];
 
-    for(i = 0; i < unitsAmount; i++)
-        solutionVector[i] = LAEkoeffMatrix[i][unitsAmount] / LAEkoeffMatrix[i][i];
+    for(i = 0; i < nodesAmount; i++)
+        solutionVector[i] = LAEkoeffMatrix[i][nodesAmount] / LAEkoeffMatrix[i][i];
 }
 
 
-void LAEmatrix::showSolution()
+void LAEmatrix::solutionOutput()
 {
     int i, j = 0, k = 0;
+    short shiftFlag = 0;
+    double x, y;
 
-    for(i = 0; i < unitsAmount; i++)
+    ofstream fout("data.txt");
+
+    for(i = 0; i < nodesAmount ; i++)
     {
-        cout << "T[" << j << "][" << k << "] = " << solutionVector[i] << endl;
-        if(j && (j % (unitsInCircleAmount - 1) == 0))
+
+        x = (r+k*deltaR) * cos(j*deltaFi);
+        y = (r+k*deltaR) * sin(j*deltaFi);
+
+        fout << x << "    " << y << "    " << solutionVector[i] << endl;
+
+        if(shiftFlag)
+        {
+          fout << endl << x << "    " << y << "    " << solutionVector[i] <<endl;
+          shiftFlag = 0;
+        }
+
+        if(j && (j % (nodesInCircleAmount - 1) == 0))
         {
             j = 0;
+            shiftFlag = 1;
             k++;
         }
         else
             j++;
+    }
+
+    fout.close();
+}
+
+
+void LAEmatrix::makeApproximation(const LAEmatrix *matrix)
+{
+    int matchingNodesStep;
+    int i, j;
+    double h1, h2, hRatioInPowerOfK;
+    double approximatedSolution;
+
+    matchingNodesStep = matrix->stepMultiple / stepMultiple;
+    h1 = deltaR / matrix->stepMultiple;
+    h2 = deltaR / stepMultiple;
+    hRatioInPowerOfK = pow((h1/h2), 2);
+
+    for(i = 0, j = 0; i < nodesAmount; i++, j += matchingNodesStep)
+    {
+        approximatedSolution = (solutionVector[j] * hRatioInPowerOfK - matrix->solutionVector[j]) / (hRatioInPowerOfK - 1);
+        solutionVector[i] = approximatedSolution;
     }
 }
 
@@ -240,9 +284,9 @@ void LAEmatrix::showLAEkoeffMatrix()
 {
     int i, j;
 
-	for(i = 0; i < unitsAmount; i++)
+	for(i = 0; i < nodesAmount; i++)
 	{
-		for(j = 0; j <= unitsAmount; j++)
+		for(j = 0; j <= nodesAmount; j++)
 			cout << LAEkoeffMatrix[i][j] << " ";
 		cout << endl;
 	}

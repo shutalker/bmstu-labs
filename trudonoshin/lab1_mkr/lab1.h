@@ -3,7 +3,7 @@
 
 
 double deltaR = 0.5;
-double deltaFi = M_PI / 12;
+double deltaFi = M_PI / 24;
 double R = 50.0;
 double r = 44.0;
 double robenConditionValue = 0.0;         //Числовые значения

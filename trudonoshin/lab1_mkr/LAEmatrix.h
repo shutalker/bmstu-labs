@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cmath>
 #include <new>
@@ -22,21 +23,23 @@ class LAEmatrix
     private:
         double **LAEkoeffMatrix;
         double  *solutionVector;
-        int      unitsInWidthAmount;
-        int      unitsInCircleAmount;
-        int      unitsAmount;
+        int      nodesInWidthAmount;
+        int      nodesInCircleAmount;
+        int      nodesAmount;
+        int      stepMultiple;
 
-        double * generateInnerUnitKoeffs(const double );
+        double * generateInnerNodeKoeffs(const double);
         int      fillMatrixWithInnerKoeffs(int &);
         int      fillMatrixWithRobenKoeffs(int &);
         int      fillMatrixWithNeumannKoeffs(int &);
         int      fillMatrixWithDirichletKoeffs(int &);
     
     public:
-        LAEmatrix();
+        LAEmatrix(int);
         ~LAEmatrix();
         void   fillMatrixWithKoeffs();
         void   gaussLAESolution();
         void   showLAEkoeffMatrix();
-        void   showSolution();
+        void   makeApproximation(const LAEmatrix *);
+        void   solutionOutput();
 };
