@@ -64,6 +64,7 @@ if __name__ == '__main__':
     sample_freq = 360
     lowcut = 5
     highcut = 15
+    window_width = 41
 
     rec = wfdb.rdsamp('231', sampto=samples_amount, channels=[0], physical=False, pbdir='mitdb')
     filtering_signal = get_signal_from_channel(rec.d_signals, 0)
@@ -71,7 +72,6 @@ if __name__ == '__main__':
     plt.plot(filtering_signal, 'r')
     plt.ylabel('adus')
 
-    # COMMENT FILTERS IMPLEMENTATION TO FEEL THE DIFFERENCE (and change output plot image name)!
     # Butterworth 1-order lowpass filter
     b, a = butter_bandpass(lowcut, sample_freq, 'lowpass')
     # initial condition for lfilter
@@ -89,6 +89,7 @@ if __name__ == '__main__':
     plt.ylabel('derivative')
 
     amplitude_squaring(filtering_signal)
+    filtering_signal = signal.medfilt(filtering_signal, window_width)
 
     # plot resulting signal
     plt.subplot(313)
