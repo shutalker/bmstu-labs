@@ -84,7 +84,31 @@ def peak_detection(amplitude, spk, npk, threshold, threshold_type):
 
     return recalculated_thresholds
 
-def adaptive_tresholds_algorithm(clean, integrated, 
+def detect_T_wawe(derivative, sample, last_peek_idx):
+
+    # sample offset for slope detecting
+    slope_offset = 5
+
+    T_wawe_idx = [-1, -1]
+
+    if last_peek_idx:
+        try:
+            current_R_slope = derivative[sample - slope_offset]
+            last_R_slope = derivative[last_peek_idx - slope_offset]
+        except IndexError:
+            last_R_slope = derivative[0]
+
+        if last_R_slope >= (2 * current_R_slope):
+            T_wawe_idx[1] = current_R_slope
+        elif current_R_slope >= (2 * last_R_slope):
+            T_wawe_idx[0] = last_R_slope
+
+    return T_wawe_idx
+
+
+
+
+def adaptive_tresholds_algorithm(clean, integrated, derivative, 
                                  search_width, peakidxs):
 
     # initial estimates for filtered (clean) signal (in mV)
@@ -113,15 +137,16 @@ def adaptive_tresholds_algorithm(clean, integrated,
 
     # returning value
     pulse_signal = [0] * signal_duration
+    last_peek_idx = None
 
     for frame_idx in range(frame_amount):
         peak_counter = 0
 
-        if frame == frame_amount - 1:
+        if frame_idx == frame_amount - 1:
             end_frame_idx = search_width - frame_delta
 
-        clean_signal_frame = clean[start_frame_idx : end_frame_idx]
-        integrated_signal_frame = integrated[start_frame_idx : end_frame_idx]
+        # clean_signal_frame = clean[start_frame_idx : end_frame_idx]
+        # integrated_signal_frame = integrated[start_frame_idx : end_frame_idx]
 
         # forward peak searching
         for sample in range(start_frame_idx, end_frame_idx):
@@ -147,8 +172,15 @@ def adaptive_tresholds_algorithm(clean, integrated,
 
             if peak_detector > 1:
                 if sample in peakidxs:
-                    pulse_signal[sample] = 1
-                    peak_counter += 1
+                    T_wawes = detect_T_wawe(derivative, sample,
+                                                last_peek_idx)
+                    if T_wawes[0] != -1:
+                        pulse_signal[T_wawes[0]] = 0
+
+                    if T_wawes[1] == -1:
+                        pulse_signal[sample] = 1
+                        last_peek_idx = sample
+                        peak_counter += 1
 
         # peek backsearch
         if peak_counter == 0:
@@ -175,8 +207,15 @@ def adaptive_tresholds_algorithm(clean, integrated,
 
                 if peak_detector > 1:
                     if sample in peakidxs:
-                        pulse_signal[sample] = 1
-                        peak_counter += 1
+                        T_wawes = detect_T_wawe(derivative, sample,
+                                                last_peek_idx)
+                        if T_wawes[0] != -1:
+                            pulse_signal[T_wawes[0]] = 0
+
+                        if T_wawes[1] == -1:
+                            pulse_signal[sample] = 1
+                            last_peek_idx = sample
+                            peak_counter += 1
 
         start_frame_idx = end_frame_idx
         end_frame_idx += search_width
@@ -189,7 +228,8 @@ if __name__ == '__main__':
     highcut = 15
     window_width = 41
 
-    rec = wfdb.rdsamp('231', sampfrom=samples_amount*2, sampto=samples_amount*3, channels=[0],
+    rec = wfdb.rdsamp('231', sampfrom=samples_amount*2,
+                      sampto=samples_amount*3, channels=[0],
                       physical=True, pbdir='mitdb')
     sample_freq = rec.fs
     filtering_signal = get_signal_from_channel(rec.p_signals, 0)
@@ -221,29 +261,21 @@ if __name__ == '__main__':
 
     # finding peaks for desicion rule algorithm in filtered signal
     peakidxs = signal.find_peaks_cwt(np.array(clean_signal), np.arange(1, 200))
-    # peaks = [0] * samples_amount
-    # for idx in range(samples_amount):
-    #     for peakidx in peakidxs:
-    #         if idx == peakidx:
-    #             peaks[idx] = 1
-
-    # plt.subplot(413)
-    # plt.plot(peaks, 'b')
-    # plt.ylabel('pulse')
 
     # signal indicates locations of R-peaks
     pulse_signal = adaptive_tresholds_algorithm(clean_signal,
                                                 integrated_signal,
+                                                derivative_signal,
                                                 window_width,
                                                 peakidxs)
     #print(pulse_signal)
     plt.subplot(413)
-    plt.plot(pulse_signal, 'b')
-    plt.ylabel('pulse')
+    plt.plot(integrated_signal, 'b')
+    plt.ylabel('mV')
 
     # plot resulting signal
     plt.subplot(414)
-    plt.plot(integrated_signal)
-    plt.ylabel('adus')
+    plt.plot(pulse_signal)
+    plt.ylabel('pulse')
     plt.xlabel('filtered signal')
     plt.savefig('sig.png', format='png')
