@@ -228,6 +228,10 @@ if __name__ == '__main__':
     highcut = 15
     window_width = 41
 
+    # configuring plot and subplots
+    fig = plt.figure(figsize=(10.24, 7.68))
+    plt.subplots_adjust(hspace=0.6)
+
     rec = wfdb.rdsamp('231', sampfrom=samples_amount*2,
                       sampto=samples_amount*3, channels=[0],
                       physical=True, pbdir='mitdb')
@@ -235,7 +239,8 @@ if __name__ == '__main__':
     filtering_signal = get_signal_from_channel(rec.p_signals, 0)
     plt.subplot(411)
     plt.plot(filtering_signal, 'r')
-    plt.ylabel('adus')
+    plt.ylabel('mV')
+    plt.xlabel('clean signal')
 
     # Butterworth 1-order lowpass filter
     b, a = butter_bandpass(lowcut, sample_freq, 'lowpass')
@@ -254,7 +259,7 @@ if __name__ == '__main__':
     derivative_signal = five_point_derivative(clean_signal, sample_freq)
     plt.subplot(412)
     plt.plot(derivative_signal, 'g')
-    plt.ylabel('derivative')
+    plt.xlabel('derivative')
 
     amplitude_squaring(clean_signal)
     integrated_signal = signal.medfilt(clean_signal, window_width)
@@ -271,11 +276,13 @@ if __name__ == '__main__':
     #print(pulse_signal)
     plt.subplot(413)
     plt.plot(integrated_signal, 'b')
-    plt.ylabel('mV')
+    plt.ylabel('adus')
+    plt.xlabel('filtered_signal')
 
     # plot resulting signal
     plt.subplot(414)
     plt.plot(pulse_signal)
     plt.ylabel('pulse')
-    plt.xlabel('filtered signal')
-    plt.savefig('sig.png', format='png')
+    plt.xlabel('pulse signal with R-peak locations')
+    plt.tight_layout()
+    plt.savefig('sig.png', dpi=200, format='png')
