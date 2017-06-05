@@ -30,12 +30,11 @@ def butter_bandpass(cutoff, sample_freq, filter_type, order=1):
 
 def five_point_derivative(sig, sample_freq):
     derivative = list()
-    sample_period = 1 / sample_freq
     sig_length = len(sig)
 
-    derivative_value = (1 / 8) * sample_period * (2 * sig[1] + sig[2])
+    derivative_value = (1 / 8) * sample_freq * (2 * sig[1] + sig[2])
     derivative.append(derivative_value)    
-    derivative_value = (1 / 8) * sample_period * (-2 * sig[0] + 2 * sig[2] + sig[3])
+    derivative_value = (1 / 8) * sample_freq * (-2 * sig[0] + 2 * sig[2] + sig[3])
     derivative.append(derivative_value)
 
     for sample_idx in range(2, (sig_length - 2)):
@@ -44,12 +43,12 @@ def five_point_derivative(sig, sample_freq):
         third_point_value = sig[sample_idx + 1]
         fourth_point_value = sig[sample_idx + 2]
         derivative_value = -first_point_value - 2 * second_point_value + 2 * third_point_value + fourth_point_value
-        derivative_value *= (1 / 8) * sample_period
+        derivative_value *= (1 / 8) * sample_freq
         derivative.append(derivative_value)
 
-    derivative_value = (1 / 8) * sample_period * (-sig[sig_length-4] - 2 * sig[sig_length-3] + 2 * sig[sig_length-1])
+    derivative_value = (1 / 8) * sample_freq * (-sig[sig_length-4] - 2 * sig[sig_length-3] + 2 * sig[sig_length-1])
     derivative.append(derivative_value)    
-    derivative_value = (1 / 8) * sample_period * (-sig[sig_length-3] - 2 * sig[sig_length-2])
+    derivative_value = (1 / 8) * sample_freq * (-sig[sig_length-3] - 2 * sig[sig_length-2])
     derivative.append(derivative_value)
 
     return derivative
@@ -58,6 +57,7 @@ def five_point_derivative(sig, sample_freq):
 def amplitude_squaring(sig):
     for sample_idx in range(len(sig)):
         sig[sample_idx] = sig[sample_idx] ** 2
+
 
 def peak_detection(amplitude, spk, npk, threshold, threshold_type):
 
@@ -84,28 +84,25 @@ def peak_detection(amplitude, spk, npk, threshold, threshold_type):
 
     return recalculated_thresholds
 
-def detect_T_wawe(derivative, sample, last_peek_idx):
 
-    # sample offset for slope detecting
-    slope_offset = 5
+def detect_T_wawe(derivative, max_slope, sample, search_width):
 
-    T_wawe_idx = [-1, -1]
+    is_T_wawe = False
 
-    if last_peek_idx:
-        try:
-            current_R_slope = derivative[sample - slope_offset]
-            last_R_slope = derivative[last_peek_idx - slope_offset]
-        except IndexError:
-            last_R_slope = derivative[0]
+    # sample width offset for slope detecting
+    slope_offset = search_width
+    start_search_idx = sample - slope_offset
 
-        if last_R_slope >= (2 * current_R_slope):
-            T_wawe_idx[1] = current_R_slope
-        elif current_R_slope >= (2 * last_R_slope):
-            T_wawe_idx[0] = last_R_slope
+    if start_search_idx < 0:
+        start_search_idx = 0
 
-    return T_wawe_idx
+    slope_search_frame = derivative[start_search_idx : sample]
+    curr_peak_slope = max(slope_search_frame)
 
+    if max_slope >= (2 * curr_peak_slope):
+        is_T_wawe = True
 
+    return is_T_wawe
 
 
 def adaptive_tresholds_algorithm(clean, integrated, derivative, 
@@ -124,7 +121,7 @@ def adaptive_tresholds_algorithm(clean, integrated, derivative,
 
     # for Integration waveform
     spki = max(integrated)
-    npki = spki / 3
+    npki = spki / 2
 
     h_threshold_i = npki + 0.25 * (spki - npki)
     l_threshold_i = 0.5 * h_threshold_i
@@ -135,18 +132,16 @@ def adaptive_tresholds_algorithm(clean, integrated, derivative,
     end_frame_idx = search_width
     frame_delta = search_width * frame_amount - signal_duration
 
+    max_slope = max(derivative)
+
     # returning value
     pulse_signal = [0] * signal_duration
-    last_peek_idx = None
 
     for frame_idx in range(frame_amount):
         peak_counter = 0
 
         if frame_idx == frame_amount - 1:
             end_frame_idx = search_width - frame_delta
-
-        # clean_signal_frame = clean[start_frame_idx : end_frame_idx]
-        # integrated_signal_frame = integrated[start_frame_idx : end_frame_idx]
 
         # forward peak searching
         for sample in range(start_frame_idx, end_frame_idx):
@@ -172,19 +167,14 @@ def adaptive_tresholds_algorithm(clean, integrated, derivative,
 
             if peak_detector > 1:
                 if sample in peakidxs:
-                    T_wawes = detect_T_wawe(derivative, sample,
-                                                last_peek_idx)
-                    if T_wawes[0] != -1:
-                        pulse_signal[T_wawes[0]] = 0
-
-                    if T_wawes[1] == -1:
+                    if not detect_T_wawe(derivative, max_slope, sample,
+                                         search_width):
                         pulse_signal[sample] = 1
-                        last_peek_idx = sample
                         peak_counter += 1
 
         # peek backsearch
-        if peak_counter == 0:
-            for sample in range(end_frame_idx, start_frame_idx):
+        if peak_counter < 1:
+            for sample in range(end_frame_idx, start_frame_idx, -1):
                 peak_detector = 0
                 f_amplitude = clean[sample]
                 i_amplitude = integrated[sample]
@@ -207,14 +197,9 @@ def adaptive_tresholds_algorithm(clean, integrated, derivative,
 
                 if peak_detector > 1:
                     if sample in peakidxs:
-                        T_wawes = detect_T_wawe(derivative, sample,
-                                                last_peek_idx)
-                        if T_wawes[0] != -1:
-                            pulse_signal[T_wawes[0]] = 0
-
-                        if T_wawes[1] == -1:
+                        if not detect_T_wawe(derivative, max_slope, sample,
+                                             search_width):
                             pulse_signal[sample] = 1
-                            last_peek_idx = sample
                             peak_counter += 1
 
         start_frame_idx = end_frame_idx
@@ -222,25 +207,28 @@ def adaptive_tresholds_algorithm(clean, integrated, derivative,
 
     return pulse_signal
 
+
 if __name__ == '__main__':
     samples_amount = 1500
-    lowcut = 5
-    highcut = 15
+    lowcut = 10
+    highcut = 7
     window_width = 41
 
     # configuring plot and subplots
     fig = plt.figure(figsize=(10.24, 7.68))
     plt.subplots_adjust(hspace=0.6)
 
-    rec = wfdb.rdsamp('231', sampfrom=samples_amount*2,
+    # using records from noise stress test records db
+    rec = wfdb.rdsamp('119e12', sampfrom=samples_amount*2,
                       sampto=samples_amount*3, channels=[0],
-                      physical=True, pbdir='mitdb')
+                      physical=True, pbdir='nstdb')
     sample_freq = rec.fs
+
     filtering_signal = get_signal_from_channel(rec.p_signals, 0)
-    plt.subplot(411)
+    plt.subplot(511)
     plt.plot(filtering_signal, 'r')
     plt.ylabel('mV')
-    plt.xlabel('clean signal')
+    plt.xlabel('input signal')
 
     # Butterworth 1-order lowpass filter
     b, a = butter_bandpass(lowcut, sample_freq, 'lowpass')
@@ -255,9 +243,12 @@ if __name__ == '__main__':
     zi = signal.lfilter_zi(b, a)
     clean_signal, _ = signal.lfilter(b, a, filtering_signal,
                                      zi=zi*filtering_signal[0])
+    plt.subplot(512)
+    plt.plot(clean_signal, 'b')
+    plt.xlabel('clean signal')
 
     derivative_signal = five_point_derivative(clean_signal, sample_freq)
-    plt.subplot(412)
+    plt.subplot(513)
     plt.plot(derivative_signal, 'g')
     plt.xlabel('derivative')
 
@@ -274,13 +265,13 @@ if __name__ == '__main__':
                                                 window_width,
                                                 peakidxs)
     #print(pulse_signal)
-    plt.subplot(413)
-    plt.plot(integrated_signal, 'b')
+    plt.subplot(514)
+    plt.plot(integrated_signal)
     plt.ylabel('adus')
-    plt.xlabel('filtered_signal')
+    plt.xlabel('filtered signal')
 
     # plot resulting signal
-    plt.subplot(414)
+    plt.subplot(515)
     plt.plot(pulse_signal)
     plt.ylabel('pulse')
     plt.xlabel('pulse signal with R-peak locations')
