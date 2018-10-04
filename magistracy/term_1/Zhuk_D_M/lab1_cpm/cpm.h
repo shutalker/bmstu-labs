@@ -45,7 +45,7 @@ public:
 private:
     struct TaskPath {
         std::vector<std::shared_ptr<Task>> seq;
-        int duration = 0;
+        int duration;
 
         TaskPath(): duration(0) {}
     };
