@@ -7,13 +7,14 @@
 #include <memory>
 
 struct Task {
-    bool isInitial = false;
-    int  duration  = 0;
+    bool isInitial;
+    int  duration;
+    int  reserve;
     std::string taskId;
     std::vector<std::shared_ptr<Task>> children;
 
-    Task(const std::string &id): taskId(id), isInitial(false), duration(0) {}
-    Task(): isInitial(false), duration(0) {}
+    Task(const std::string &id): taskId(id), isInitial(false), duration(0), reserve(0) {}
+    Task(): isInitial(false), duration(0), reserve(0) {}
 
     bool IsInitialized() const { return isInitialized; }
     void SetInitialized()      { isInitialized = true; }
@@ -40,7 +41,8 @@ class TaskPathList {
 public:
     TaskPathList(): iCriticalPath(-1), maxPathDuration(0) {}
     void Create(const TaskList &tasklist);
-    void Dump();
+    void FindTaskReserves();
+    void Dump() const;
 
 private:
     struct TaskPath {

@@ -25,7 +25,9 @@ int main(int argc, char *argv[]) {
         }
 
         pathlist.Create(tasklist);
+        pathlist.FindTaskReserves();
         pathlist.Dump();
+        tasklist.Dump();
     } catch (const boost::property_tree::ptree_error &e) {
         std::cerr << "Boost exception: " << e.what() << std::endl;
         exitcode = ERR_PARSE_JSON;

@@ -84,6 +84,7 @@ void TaskList::Dump() const {
         std::cout << "id = " << taskNode.first
             << ";\tisInitial = " << taskNode.second->isInitial
             << ";\tduration = " << taskNode.second->duration
+            << ";\treserve = " << taskNode.second->reserve
             << ";\tchildren = [";
 
         for (size_t i = 0; i < children.size(); ++i) {

@@ -36,7 +36,40 @@ void TaskPathList::Create(const TaskList &tasklist) {
     }
 }
 
-void TaskPathList::Dump() {
+void TaskPathList::FindTaskReserves() {
+
+    for (size_t iLayer = 0; iLayer < pathes[iCriticalPath].seq.size(); ++iLayer) {
+        size_t critPathLength = pathes[iCriticalPath].seq.size();
+        const Task &critTask  = *pathes[iCriticalPath].seq[iLayer];
+
+        for (size_t iPath = 0; iPath < pathes.size(); ++iPath) {
+            if (pathes[iPath].seq.size() < (iLayer + 1))
+                continue;
+
+            if (iPath == iCriticalPath)
+                continue;
+
+            Task &t = *pathes[iPath].seq[iLayer];
+
+            if (t.taskId == critTask.taskId)
+                continue;
+
+            if (t.children.empty()) {
+                size_t taskDelta = critPathLength - iLayer;
+                int critDuration = 0;
+
+                for (size_t iTask = 0; iTask < taskDelta; ++iTask)
+                    critDuration += pathes[iCriticalPath].seq[critPathLength - iTask - 1]->duration;
+
+                t.reserve = critDuration - t.duration;
+            } else {
+                t.reserve =  critTask.duration - t.duration;
+            }            
+        }
+    }
+}
+
+void TaskPathList::Dump() const {
     std::cout << "--------------- PathList ---------------" << std::endl;
 
     for (size_t iPath = 0; iPath < pathes.size(); ++iPath) {
