@@ -8,6 +8,7 @@
 #include <memory>
 #include <bitset>
 
+class TaskList;
 
 struct Task {
     bool isInitial = false;
@@ -22,11 +23,15 @@ struct Task {
     Task(const std::string &id): taskId(id) {}
     Task() {}
 
-    bool IsParsed() const { return isParsed; }
-    void SetParsed()      { isParsed = true; } 
-
 private:
-    bool isParsed = false;
+    enum TaskState {
+        PARSED,
+        LOOKUP_FORWARD,
+        LOOKUP_BACKWARD
+    };
+    
+    std::bitset<3> state;
+    friend class TaskList;
 };
 
 class TaskList {

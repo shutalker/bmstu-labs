@@ -27,14 +27,14 @@ void TaskList::LoadFromJsonFile(const std::string &filename) {
         auto taskInfo = tasks.emplace(tid, std::make_shared<Task>(tid));
         Task &task = *taskInfo.first->second;
 
-        if (!taskInfo.second && task.IsParsed()) {
+        if (!taskInfo.second && task.state[Task::PARSED]) {
             throw std::runtime_error("A duplicate for task " + tid
                 + " has been found in " + filename);
         }
 
         task.duration  = taskNode.second.get<int>("duration");
         task.isInitial = taskNode.second.get("isInitial", false);
-        task.SetParsed();
+        task.state.set(Task::PARSED);
 
         // there is no need to add initialTask as parent for current task
         if (task.isInitial)
@@ -98,6 +98,11 @@ void TaskList::ForwardTaskLookup() {
 
         BOOST_FOREACH(std::shared_ptr<Task> &child, curr->children) {
             child->earliestStart = std::max(child->earliestStart, timestamp);
+
+            if (child->parents.size() == 1 && child->state[Task::LOOKUP_FORWARD])
+                continue;
+
+            child->state.set(Task::LOOKUP_FORWARD);
             q.push(child);
         }
 
@@ -131,6 +136,10 @@ void TaskList::BackwardTaskLookup() {
             else
                 parent->latestFinish = timestamp;
 
+            if (parent->children.size() == 1 && parent->state[Task::LOOKUP_BACKWARD])
+                continue;
+
+            parent->state.set(Task::LOOKUP_BACKWARD);
             q.push(parent);
         }
 
