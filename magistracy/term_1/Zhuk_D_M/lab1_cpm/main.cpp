@@ -12,22 +12,19 @@ int main(int argc, char *argv[]) {
     };
     int exitcode = NOERR;
     TaskList tasklist;
-    TaskPathList pathlist;
 
     try {
         tasklist.LoadFromJsonFile("tasklist.json");
-        tasklist.Dump();
-        tasklist.DumpReverseTaskLinks();
+        tasklist.Dump("INITIAL");
 
         if (!tasklist.IsValid()) {
             std::cerr << "Invalid task list" << std::endl;
             return ERR_INVALID_TASKLIST;
         }
 
-        pathlist.Create(tasklist);
-        pathlist.FindTaskReserves();
-        pathlist.Dump();
-        tasklist.Dump();
+        tasklist.FindCriticalPath();
+        tasklist.Dump("FINAL");
+        tasklist.DumpCriticalPath();
     } catch (const boost::property_tree::ptree_error &e) {
         std::cerr << "Boost exception: " << e.what() << std::endl;
         exitcode = ERR_PARSE_JSON;
