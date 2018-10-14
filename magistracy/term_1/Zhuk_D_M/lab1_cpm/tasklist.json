@@ -1,0 +1,39 @@
+[
+    {
+        "taskId": "0",
+        "children": ["2", "3"],
+        "duration": 5,
+        "isInitial": true
+    },
+    {
+        "taskId": "1",
+        "children": ["2", "3"],
+        "duration": 4,
+        "isInitial": true
+    },
+    {
+        "taskId": "2",
+        "children": ["4"],
+        "duration": 3
+    },
+    {
+        "taskId": "3",
+        "children": ["4", "5"],
+        "duration": 3
+    },
+    {
+        "taskId": "4",
+        "children": null,
+        "duration": 10
+    },
+    {
+        "taskId": "5",
+        "children": ["6"],
+        "duration": 8
+    },
+    {
+        "taskId": "6",
+        "children": null,
+        "duration": 4
+    }
+]
