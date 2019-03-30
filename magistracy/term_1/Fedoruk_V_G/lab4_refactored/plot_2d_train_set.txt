@@ -1,0 +1,2 @@
+plot "train.data" using 1:2 with line
+pause -1
