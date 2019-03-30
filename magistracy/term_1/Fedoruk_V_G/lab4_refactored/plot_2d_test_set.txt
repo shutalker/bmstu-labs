@@ -1,0 +1,2 @@
+plot "test.data" using 1:2 with line, "train.data" using 1:2 with line, "0.txt" using 1:2 with line, "1.txt" using 1:2 with line, "2.txt" using 1:2 with line, "3.txt" using 1:2 with line, "4.txt" using 1:2 with line, "5.txt" using 1:2 with line
+pause -1

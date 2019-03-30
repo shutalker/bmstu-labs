@@ -1,0 +1,69 @@
+is_member(Elem, [Elem | _]) :- !.
+is_member(Elem, [_ | LTail]) :- is_member(Elem, LTail).
+
+%1
+list_concat([], L2, L2) :- !.
+list_concat([L1Head | L1Tail], L2, [L1Head | L3Tail]) :-
+    list_concat(L1Tail, L2, L3Tail).
+%2
+invert(SourceList, InvertedList) :- invert(SourceList, [], InvertedList).
+invert([], Buffer, Buffer) :- !.
+invert([SLHead | SLTail], Buffer, InvertedList) :-
+    invert(SLTail, [SLHead | Buffer], InvertedList).
+
+%3
+uniq(SourceList, TargetList) :- uniq(SourceList, [], TargetList).
+uniq([], Buffer, Buffer) :- !.
+uniq([SLHead | SLTail], Buffer, TargetList) :-
+    not(is_member(SLHead, Buffer)), !,
+    list_concat(Buffer, [SLHead], NewBuffer),
+    uniq(SLTail, NewBuffer, TargetList);
+    uniq(SLTail, Buffer, TargetList).
+
+%4
+ucat(L1, L2, L3) :- ucat(L1, L2, L3, []).
+ucat([], [], [], _):-!.
+
+ucat([], [Head1 | Tail1], [Head1 | Tail2], L):-
+    not(member(Head1, L)),
+    ucat([], Tail1, Tail2, L) .
+
+ucat([], [Head1 | Tail1], [Head2 | Tail2], L):-
+    member(Head1 , L),
+    ucat([], Tail1, [Head2 | Tail2], L) .
+
+ucat([], [Head | Tail], [], L2) :-
+    member(Head, L2),
+    ucat([], Tail, [], L2) .
+
+ucat([Head | Tail], L2, [Head | TailR], L):-
+    ucat(Tail, L2, TailR, [Head | L]).
+
+%5
+mapop(_, [], [], []) :- !.
+mapop(Op, [L1H | L1T], [L2H | L2T], [RH | RT]) :-
+    mapop(Op, L1T, L2T, RT),
+    Expr =.. [Op, L1H, L2H],
+    RH is Expr.
+
+%6
+unbr([], []) :- !.
+unbr([SLHead | SLTail], UnbracedList) :-
+    !,
+    unbr(SLHead, TempList1),
+    unbr(SLTail, TempList2),
+    list_concat(TempList1, TempList2, UnbracedList).
+unbr(List, [List]).
+
+
+%7
+listsum([], 0) :- !.
+listsum([LHead | LTail], Sum) :- listsum(LTail, PrevSum), Sum is LHead + PrevSum.
+
+msum(ListOfLists, SumList) :-
+    msum(ListOfLists, TempSumList, []),
+    invert(TempSumList, SumList).
+msum([], Buffer, Buffer) :- !.
+msum([LLHead | LLTail], SumList, Buffer) :-
+    listsum(LLHead, Sum),
+    msum(LLTail, SumList, [Sum |Buffer]).

@@ -1,0 +1,3 @@
+set terminal jpeg
+set output 'points.jpeg'
+plot 'points.data' using 1:2

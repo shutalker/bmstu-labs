@@ -1,0 +1,39 @@
+% edge is a passage between two rooms (vA, vB) in maze
+edge(v1, v2).
+edge(v1, v3).
+edge(v2, v3).
+edge(v3, v4).
+edge(v3, v5).
+edge(v2, v5).
+edge(v4, v6).
+edge(v4, v7).
+edge(v8, v2).
+edge(v9, v1).
+edge(v9, v8).
+edge(v5, v10).
+edge(v10, v11).
+edge(v11, v6).
+edge(v10, v12).
+edge(v7, v12).
+edge(v8, v10).
+edge(v9, v3).
+
+is_linked(V1, V2) :- edge(V1, V2); edge(V2, V1).
+
+prolong_way([Temp | Tail], [New, Temp | Tail]):-
+    is_linked(Temp, New),
+    not(member(New, [Temp | Tail])).
+
+% cut is used to prevent enumeration of all solutions
+bfs([[Finish | Tail] | _], Finish, [Finish | Tail]).
+
+bfs([HeadWay | TailWays], Finish, Way) :-
+    findall(W, prolong_way(HeadWay, W), Ways),
+    append(TailWays, Ways, NewWays),
+    bfs(NewWays, Finish, Way).
+
+path(From, To, PathList):-
+    findall(Path, bfs([[From]], To, Path), PathList).
+
+
+

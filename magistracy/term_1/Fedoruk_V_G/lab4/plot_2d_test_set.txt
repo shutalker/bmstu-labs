@@ -1,0 +1,2 @@
+plot "test.data" using 1:2
+pause -1

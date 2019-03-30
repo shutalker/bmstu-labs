@@ -1,0 +1,6 @@
+set hidden3d
+set dgrid3d 32,32 gauss 0.75
+splot "test.data" u 1:2:3 with lines
+pause -1
+
+
