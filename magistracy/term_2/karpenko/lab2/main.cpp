@@ -1,4 +1,6 @@
+#include <fstream>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 
@@ -20,6 +22,9 @@ int main() {
   grid.AddLinearConstraint(linearConstraint);
 
   const std::vector<int> N_PROCESSORS = {2, 4, 8, 16, 32, 64};
+  const std::vector<double> C_F_MAX = {8e6, 8e3}; // computation complexity (number of operations per one computation)
+
+  std::ofstream results("res.out");
 
   for (const auto &nProc: N_PROCESSORS) {
     std::cout << "main --> processors = " << nProc << std::endl;
@@ -29,12 +34,21 @@ int main() {
     analyzers.emplace_back(new MPCBAnalyzerSpaceDecomposition());
     analyzers.emplace_back(new MPCBAnalyzerNodesDecomposition());
 
-    std::cout << "main --> acceleration for " << nProc << " processors:" << std::endl;
+    for (const auto &cfMax: C_F_MAX) {
+      std::cout << "  main --> cf_max =  " << cfMax << std::endl;
+      results << std::setprecision(15) << nProc << " " << cfMax << " ";
 
-    for (const auto &analyzer: analyzers) {
-      AccelerationStat accelStat = std::move(analyzer->GetAccelerationStat(stats));
-      std::cout << "  " << analyzer->GetName() <<  " acceleration = " << accelStat.accelleration << std::endl;
+      for (const auto &analyzer: analyzers) {
+        AccelerationStat accelStat = std::move(analyzer->GetAccelerationStat(stats, cfMax));
+        std::cout << "    main --> " << analyzer->GetName() <<  " acceleration = "
+            << accelStat.accelleration << std::endl;
+        results << std::setprecision(15) << accelStat.accelleration << " ";
+      }
+
+      results << std::endl;
     }
+
+    results << std::endl << std::endl;
   }
 
   return 0;

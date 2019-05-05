@@ -15,13 +15,13 @@ static const double T_S = 5e-5; // latency between two processors before communi
 static const double T_C = (1.0 / 80.0) * 1e-6; // communication time between two processors
 
 static const int DIM = 2;  // dimension of problem space
-static const int C_F = 100000; // computation complexity (number of operations per one computation)
 
 // MultiProcessor Computation Balancing Analyzer base class
 class MPCBAnlyzer {
  public:
   virtual ~MPCBAnlyzer() {}
-  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats) = 0;
+  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats,
+      double computionComplexity) = 0;
   virtual std::string GetName() = 0;
 
   int GetNetworkDiameter(int processors) {
@@ -31,7 +31,8 @@ class MPCBAnlyzer {
 
 class MPCBAnalyzerSpaceDecomposition: public MPCBAnlyzer {
  public:
-  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats) {
+  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats,
+      double computionComplexity) {
     double solutionTimeParallel = 0.0;
     int networkDiameter = GetNetworkDiameter(stats.size());
     int nodesToCompute = 0;
@@ -39,13 +40,13 @@ class MPCBAnalyzerSpaceDecomposition: public MPCBAnlyzer {
     for (const auto &stat: stats) {
       nodesToCompute += stat.nodesComputable;
       double t = 2 * T_S + (stat.nodesOverall * DIM + stat.nodesComputable * M) \
-          * L * networkDiameter * T_C + T * stat.nodesComputable * C_F;
+          * L * networkDiameter * T_C + T * stat.nodesComputable * computionComplexity;
 
       if (t > solutionTimeParallel)
         solutionTimeParallel = t;
     }
 
-    double solutionTimeSequential = T * nodesToCompute * C_F;
+    double solutionTimeSequential = T * nodesToCompute * computionComplexity;
     AccelerationStat accelStat;
     accelStat.accelleration = solutionTimeSequential / solutionTimeParallel;
 
@@ -57,7 +58,8 @@ class MPCBAnalyzerSpaceDecomposition: public MPCBAnlyzer {
 
 class MPCBAnalyzerNodesDecomposition: public MPCBAnlyzer {
  public:
-  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats) {
+  virtual AccelerationStat GetAccelerationStat(const std::vector<NodeStat> &stats,
+      double computionComplexity) {
     int networkDiameter = GetNetworkDiameter(stats.size());
     int nodesToCompute = 0;
 
@@ -66,8 +68,8 @@ class MPCBAnalyzerNodesDecomposition: public MPCBAnlyzer {
 
     int nodesToComputePerProcessor = ceil(nodesToCompute / stats.size());
     double solutionTimeParallel = 2 * T_S + (DIM + M) * nodesToComputePerProcessor \
-        * L * networkDiameter * T_C + T * nodesToComputePerProcessor * C_F;
-    double solutionTimeSequential = T * nodesToCompute * C_F;
+        * L * networkDiameter * T_C + T * nodesToComputePerProcessor * computionComplexity;
+    double solutionTimeSequential = T * nodesToCompute * computionComplexity;
     AccelerationStat accelStat;
     accelStat.accelleration = solutionTimeSequential / solutionTimeParallel;
 
