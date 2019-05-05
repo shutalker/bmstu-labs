@@ -34,7 +34,7 @@ double GetAcceleration(const std::vector<NodeStat> &stats,
   for (const auto &stat: stats)
     nodesToCompute += stat.nodesComputable;
 
-  int nodesToComputePerProcessor = ceil(nodesToCompute / stats.size());
+  int nodesToComputePerProcessor = ceil((double)(nodesToCompute) / stats.size());
   double solutionTimeParallel = 2 * T_S + (DIM + M) * nodesToComputePerProcessor \
       * L * networkDiameter * T_C + T * nodesToComputePerProcessor * computationComplexity;
   double solutionTimeSequential = T * nodesToCompute * computationComplexity;
