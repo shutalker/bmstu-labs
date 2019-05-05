@@ -16,7 +16,6 @@ static const int L = 8;   // length (in bytes) of one float-point number in simu
 static const double T = 1e-8; // time of function computation in simulation
 static const double T_S = 5e-5; // latency between two processors before communication
 static const double T_C = (1.0 / 80.0) * 1e-6; // communication time between two processors
-static const double C_F_MAX = 1e5;
 
 static const int DIM = 2;  // dimension of problem space
 
