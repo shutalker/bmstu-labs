@@ -33,10 +33,11 @@ int main() {
     std::vector<std::shared_ptr<MPCBAnlyzer>> analyzers;
     analyzers.emplace_back(new MPCBAnalyzerSpaceDecomposition());
     analyzers.emplace_back(new MPCBAnalyzerNodesDecomposition());
+    results << nProc << " ";
 
     for (const auto &cfMax: C_F_MAX) {
       std::cout << "  main --> cf_max =  " << cfMax << std::endl;
-      results << std::setprecision(15) << nProc << " " << cfMax << " ";
+      results << std::setprecision(15) << cfMax << " ";
 
       for (const auto &analyzer: analyzers) {
         AccelerationStat accelStat = std::move(analyzer->GetAccelerationStat(stats, cfMax));
@@ -44,11 +45,9 @@ int main() {
             << accelStat.accelleration << std::endl;
         results << std::setprecision(15) << accelStat.accelleration << " ";
       }
-
-      results << std::endl;
     }
 
-    results << std::endl << std::endl;
+    results << std::endl;
   }
 
   return 0;
