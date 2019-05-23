@@ -11,6 +11,9 @@ void PSOParticle<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION>::RandomInit() {
     position[iDim] = displacementDistribution(randomGenerator);
     velocity[iDim] = velocityDistribution(randomGenerator);
   }
+
+  bestFitnessValue = fitnessFunction(position, SEARCH_SPACE_DIMENSION);
+  std::memcpy(bestPosition, position, sizeof(double) * SEARCH_SPACE_DIMENSION);
 }
 
 template <int SEARCH_SPACE_DIMENSION, class FITNESS_FUNCTION>
@@ -18,8 +21,8 @@ void PSOParticle<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION>::UpdateSearchState() 
   std::uniform_real_distribution<> cognitiveMultiplierDistribution(0.0, PSO_B_C);
   std::uniform_real_distribution<> socialMultiplierDistribution(0.0, PSO_B_S);
 
-  double cognitiveMultiplier = cognitiveMultiplierDistribution(randomGenerator);
-  double socialMultiplier = socialMultiplierDistribution(randomGenerator);
+  // double cognitiveMultiplier = cognitiveMultiplierDistribution(randomGenerator);
+  // double socialMultiplier = socialMultiplierDistribution(randomGenerator);
   double cognitiveVectorComponent;
   double socialVectorComponent;
 
@@ -27,16 +30,16 @@ void PSOParticle<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION>::UpdateSearchState() 
     cognitiveVectorComponent = bestPosition[iDim] - position[iDim];
     socialVectorComponent = bestNeighbourPosition[iDim] - position[iDim];
 
-    velocity[iDim] = PSO_B_I * velocity[iDim] + cognitiveMultiplier * cognitiveVectorComponent \
-        + socialMultiplier * socialVectorComponent;
+    velocity[iDim] = PSO_B_I * velocity[iDim] \
+        + cognitiveMultiplierDistribution(randomGenerator) * cognitiveVectorComponent \
+        + socialMultiplierDistribution(randomGenerator) * socialVectorComponent;
 
     position[iDim] += velocity[iDim];
   }
 
   double currFitnessValue = fitnessFunction(position, SEARCH_SPACE_DIMENSION);
 
-  if (!isBestFitnessValueInitialized || currFitnessValue < bestFitnessValue) {
-    isBestFitnessValueInitialized = true;
+  if (currFitnessValue < bestFitnessValue) {
     bestFitnessValue = currFitnessValue;
     std::memcpy(bestPosition, position, sizeof(double) * SEARCH_SPACE_DIMENSION);
   }

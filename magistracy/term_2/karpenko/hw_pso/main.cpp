@@ -1,3 +1,5 @@
+#include <iostream>
+#include <fstream>
 #include "pso_particle.h"
 #include "pso_solver.h"
 
@@ -12,22 +14,11 @@ struct SphericalFunction {
   }
 };
 
-template <int SEARCH_SPACE_DIMENSION, class FITNESS_FUNCTION>
-class PSOSolver<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION, 42>
-    : public BasicPSOSolver<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION, 42> {
- public:
-  void DoStop() {
-    bool &stop = BasicPSOSolver<SEARCH_SPACE_DIMENSION, FITNESS_FUNCTION, 42>::stop;
-    std::cout << "FUCK TEMPLATES: " << stop << std::endl;
-  }
-};
-
 int main() {
-  PSOSolver<2, SphericalFunction> solver1;
-  solver1.DoStop();
-
-  PSOSolver<2, SphericalFunction, 42> solver2;
-  solver2.DoStop();
+  std::ofstream results("res.txt");
+  PSOSolver<4, SphericalFunction> solver;
+  solver.Init(50);
+  solver.Run(results);
 
   return 0;
 }
