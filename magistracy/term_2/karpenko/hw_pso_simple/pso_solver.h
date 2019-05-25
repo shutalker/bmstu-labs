@@ -19,7 +19,9 @@ struct PSOParticle {
 class PSOSolver {
  public:
   void InitSolver(int swarmSize, int dimension, const FitnessFunction &func);
-  bool Run(std::ostream &resultOutput);
+  bool Run(std::ostream *resultOutput = nullptr);
+  double GetBestFitnessValue() const { return globalBestFitnessValue; }
+  std::vector<double> GetBestPosition() const { return globalBestPosition; }
 
  private:
   int searchSpaceDimension;

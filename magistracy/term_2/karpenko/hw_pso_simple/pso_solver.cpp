@@ -36,16 +36,18 @@ bool PSOSolver::StagnationStopCriteria() {
   return true;
 }
 
-bool PSOSolver::Run(std::ostream &resultOutput) {
+bool PSOSolver::Run(std::ostream *resultOutput) {
   static const int MAX_ITERATIONS = 10000;
   int iterations = 0;
   stagnationIterations = 0;
   prevGlobalBestFitnessValue = 0.0;
-  resultOutput << std::fixed;
 
   while (!StagnationStopCriteria() && iterations < MAX_ITERATIONS) {
-    resultOutput << iterations << " " << std::setprecision(15) << globalBestFitnessValue
-        << std::endl;
+    if (resultOutput) {
+      *resultOutput << iterations << " " << std::setprecision(15) << globalBestFitnessValue
+          << std::endl;
+    }
+
     prevGlobalBestFitnessValue = globalBestFitnessValue;
     int iBestParticle = 0;
     double currBestFitnessValue = globalBestFitnessValue;
