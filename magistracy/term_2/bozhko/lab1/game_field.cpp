@@ -48,11 +48,13 @@ std::vector<GameField> GameField::GetPossibleMoves() const {
 
 std::string GameField::Dump() const {
   std::stringstream output;
+  std::vector<uint64_t> idSeq;
 
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
       int iCell = x + width * y;
       uint64_t chipId = field[iCell];
+      idSeq.push_back(chipId);
       char mark = '.';
 
       if (chipId != ID_UNDEF) {
@@ -65,6 +67,11 @@ std::string GameField::Dump() const {
 
     output << '\n';
   }
+
+  output << '\n';
+  for (auto &id: idSeq)
+    output << id << " ";
+  output << '\n';
 
   return output.str();
 }

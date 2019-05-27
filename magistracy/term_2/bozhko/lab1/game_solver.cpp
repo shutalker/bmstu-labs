@@ -74,7 +74,7 @@ bool GameSolver::IsSolution(const GameFieldNode &fieldNode) {
   if (fieldNode.field.GetMarkedChipsPattern() != rawSolutionPattern)
     return false;
 
-  return true;
+  return fieldNode.field.IsMarkedChipsOnSameLine();
 }
 
 void GameSolver::ParseSolutionPattern(const std::string &pattern) {
