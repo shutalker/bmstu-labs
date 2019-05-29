@@ -75,7 +75,7 @@ int main() {
 
   const std::vector<int> N_REPEATS = {1, 300};
   const std::vector<int> N_PROCESSORS = {2, 4, 8, 16, 32, 64, 128, 256};
-  const std::vector<int> N_SUBSPACES = {256, 512, 1024};
+  const std::vector<int> N_SUBSPACES = {1024};
   const std::vector<double> C_F_MAX = {8e6, 8e3};
   std::random_device randomDevice;
   std::mt19937 randomGenerator(randomDevice());
@@ -84,13 +84,16 @@ int main() {
   for (const auto &nProc: N_PROCESSORS) {
     std::cout << "main --> processors = " << nProc << std::endl;
     std::vector<NodeStat> stats = std::move(grid.GetNodeStat(nProc));
+    results << std::setprecision(15) << nProc << " ";
 
     for (const auto &cfMax: C_F_MAX) {
       std::cout << "  main --> cf_max = " << cfMax << std::endl;
       std::uniform_real_distribution<> computationComlexityDist(0.0, cfMax);
+      results << cfMax << " ";
 
       for (const auto &nSubspaces: N_SUBSPACES) {
         std::cout << "    main --> nSubspaces = " << nSubspaces << std::endl;
+        results << nSubspaces << " ";
 
         for (const auto &r: N_REPEATS) {
           std::cout << "      main --> repeats = " << r << std::endl;
@@ -98,6 +101,7 @@ int main() {
           double accelAverage = 0.0;
           double accelDispersion = 0.0;
           double accelDeviation = 0.0;
+          results << r << " ";
 
           if (r == 1) {
             accelAverage = GetAcceleration(stats, nSubspaces, cfMax);
@@ -112,14 +116,13 @@ int main() {
             accelDeviation = sqrt(accelDispersion);
           }
 
-          results << std::setprecision(15)  << nProc << " " <<  cfMax << " "
-              << nSubspaces << " " << r << " " << accelAverage << " "
-              << accelDispersion << " " << accelDeviation << std::endl;
-        }
-      }
-    }
+          results << accelAverage << " "
+              << accelDispersion << " " << accelDeviation << " ";
+        } // for repeats
+      } // for subspaces
+    } // for cf
 
-    results << std::endl << std::endl;
+    results << std::endl;
   }
 
   return 0;

@@ -1,0 +1,9 @@
+set term png size 640, 480
+set output "graph_M[S(N)]_r300_all_Cf.png"
+set autoscale
+
+set style line 1 linetype 2 linecolor rgb "blue" linewidth 1 pointtype 5
+set style line 2 linetype 2 linecolor rgb "green" linewidth 1 pointtype 9
+
+plot "res.out" using 1:9 title "M[S(N)], C_f = 8e6" ls 1 with linespoints,\
+  "res.out" using 1:19 title "M[S(N)], C_f = 8e3" ls 2 with linespoints
