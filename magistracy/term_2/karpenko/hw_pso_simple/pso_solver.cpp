@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -36,6 +37,10 @@ bool PSOSolver::StagnationStopCriteria() {
   return true;
 }
 
+bool PatricleFitnessComparator(const PSOParticle &p1, const PSOParticle &p2) {
+  return p1.bestFitnessValue < p2.bestFitnessValue;
+}
+
 bool PSOSolver::Run(std::ostream *resultOutput) {
   static const int MAX_ITERATIONS = 10000;
   int iterations = 0;
@@ -52,14 +57,40 @@ bool PSOSolver::Run(std::ostream *resultOutput) {
     int iBestParticle = 0;
     double currBestFitnessValue = globalBestFitnessValue;
     double scaleCoeff = ScaleCoefficient(iterations++);
-    psoInertia = PSO_B_I * scaleCoeff;
-    psoCognitial = PSO_B_C * scaleCoeff;
-    psoSocial = PSO_B_S * scaleCoeff;
+    // на сферической функции масштабирование ухудшает сходимость
+    psoInertia = PSO_B_I; // * scaleCoeff; // не нужно, сходимость хуже !!!
+    psoCognitial = PSO_B_C; // * scaleCoeff;
+    psoSocial = PSO_B_S; // * scaleCoeff;
 
     std::uniform_real_distribution<> cognitiveMultiplierDistribution(0.0, psoCognitial);
     std::uniform_real_distribution<> socialMultiplierDistribution(0.0, psoSocial);
 
-    for (int iParticle = 0; iParticle < particles.size(); ++iParticle) {
+    std::sort(particles.begin(), particles.end(), PatricleFitnessComparator);
+
+    // ПОДГОНЧИК
+    // смещаем лучшего агента в сторону пяти лучших агентов
+    // for (int iDim = 0; iDim < searchSpaceDimension; ++iDim) {
+    //   double coord = 0.0;
+
+    //   for (int iBest = 1; iBest < 6; ++iBest)
+    //     coord += particles[iBest].position[iDim];
+
+    //   particles[0].position[iDim] = coord / 5;
+    // }
+
+    // double fitnessValue = fitnessFunction(particles[0].position);
+
+    // if (fitnessValue < particles[0].bestFitnessValue) {
+    //   particles[0].bestFitnessValue = fitnessValue;
+    //   particles[0].bestPosition = particles[0].position;
+    // }
+
+    // if (fitnessValue < currBestFitnessValue) {
+    //   currBestFitnessValue = fitnessValue;
+    // }
+    // КОНЕЦ ПОДГОНЧИКА
+
+    for (int iParticle = 1; iParticle < particles.size(); ++iParticle) {
       PSOParticle &particle = particles[iParticle];
 
       double cognitiveVectorComponent;

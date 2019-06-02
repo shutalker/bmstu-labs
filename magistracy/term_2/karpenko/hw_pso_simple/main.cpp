@@ -20,6 +20,15 @@ FitnessFunction sphericalFunction = [] (const std::vector<double> &pos) -> doubl
   return result;
 };
 
+FitnessFunction rastriginFunction = [] (const std::vector<double> &pos) -> double {
+  double result = 0.0;
+
+  for (int i = 0; i < pos.size(); ++i)
+    result += pos[i] * pos[i] - 10 * cos(2 * M_PI * pos[i]) + 10;
+
+  return result;
+};
+
 int main() {
   const int MULTISTART = 100;
   const double GLOBAL_OPTIMA_VALUE_EPS = 1e-3;
@@ -27,12 +36,24 @@ int main() {
 
   int globalOptimaValueSatisfied = 0;
   int globalOptimaPositionSatisfied = 0;
+  int swarmSize = 50;
+  int dimension = 16;
 
   PSOSolver psoSolver;
 
   for (int iStart = 0; iStart < MULTISTART; ++iStart) {
-    psoSolver.InitSolver(50, 20, sphericalFunction);
-    std::cout << psoSolver.Run() << std::endl;
+    psoSolver.InitSolver(swarmSize, dimension, rastriginFunction);
+    psoSolver.Run();
+
+    std::cout << "iStart = " << (iStart + 1) << "; bestFitnessValue = "
+        << psoSolver.GetBestFitnessValue() << std::endl;
+
+    std::cout << "  ";
+
+    for (const auto &p: psoSolver.GetBestPosition())
+      std::cout << p << " ";
+
+    std::cout << std::endl;
 
     if (psoSolver.GetBestFitnessValue() < GLOBAL_OPTIMA_VALUE_EPS)
       globalOptimaValueSatisfied += 1;
@@ -44,8 +65,12 @@ int main() {
   double globalOptimaValueProbability = (double)(globalOptimaValueSatisfied) / MULTISTART;
   double globalOptimaPositionProbability = (double)(globalOptimaPositionSatisfied) / MULTISTART;
 
-  std::cout << "p1 = " << globalOptimaValueProbability << std::endl;
-  std::cout << "p2 = " << globalOptimaPositionProbability << std::endl;
+  std::cout << "global optima localization probability: " << globalOptimaValueProbability << std::endl;
+  std::cout << "global optima localization probability by variation vector: " << globalOptimaPositionProbability << std::endl;
+
+  std::ofstream resultOutput("res.txt");
+  psoSolver.InitSolver(swarmSize, dimension, rastriginFunction);
+  psoSolver.Run(&resultOutput);
 
   return 0;
 }

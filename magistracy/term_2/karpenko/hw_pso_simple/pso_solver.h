@@ -47,6 +47,7 @@ class PSOSolver {
 
   void SwarmRandomInit();
   bool StagnationStopCriteria();
+  // на сферической функции не нужно, ухудшает сходимость!
   double ScaleCoefficient(double x); // 2 / (1 + e^(0.003x)) - scale coefficient
 };
 
