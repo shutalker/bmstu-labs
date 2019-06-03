@@ -15,7 +15,7 @@ class SquarewordGreedySolver {
    public:
     // char - field symbol; bool - is field symbol initialized by config file
     std::vector<std::pair<char, bool>> cells;
-    int dimension;
+    int dimension = 0;
     int duplicatedSymbols = 0;
 
     void Dump(std::ostream &output) const;
