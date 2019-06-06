@@ -1,0 +1,5 @@
+set term png size 640, 480
+set output "stagnation.png"
+set autoscale
+
+plot "res.txt" using 1:2 title "~F{1.1-}(t)" lc "red" lw 2 with lines
