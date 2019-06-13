@@ -73,21 +73,22 @@ int main() {
 
     for (int iVal = assignments[iVertex] + 1; iVal < domain.size(); ++iVal) {
       auto itConflict = usedDigits.find(domain[iVal]);
-
-      if (itConflict == usedDigits.end()) {
-        assignments[iVertex] = iVal;
-        vertices[iVertex] = domain[iVal];
-
-        if (squareRootCheckers.find(iVertex) != squareRootCheckers.end())
-          if (!squareRootCheckers[iVertex]())
-            continue;
-
-        isAssigned = true;
-        usedDigits.emplace(domain[iVal], iVertex);
-        break;
+      
+      if (itConflict != usedDigits.end()) {
+        iLastConflict = std::max(iLastConflict, itConflict->second);
+        continue;
       }
 
-      iLastConflict = std::max(iLastConflict, itConflict->second);
+      assignments[iVertex] = iVal;
+      vertices[iVertex] = domain[iVal];
+    
+      if (squareRootCheckers.find(iVertex) != squareRootCheckers.end())
+        if (!squareRootCheckers[iVertex]())
+          continue;
+    
+      isAssigned = true;
+      usedDigits.emplace(domain[iVal], iVertex);
+      break;
     }
 
     if (isAssigned)
