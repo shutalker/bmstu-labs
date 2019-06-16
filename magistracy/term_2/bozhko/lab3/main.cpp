@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <random>
 #include <vector>
 #include <unordered_set>
 
@@ -47,9 +48,19 @@ struct FullSquareRootChecker {
 int main() {
   std::vector<int> vertices(9, -1);
   std::vector<int> assignments(9, -1);
-  const std::vector<int> domain = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  std::vector<int> conflicts(9, -1);
+  std::vector<int> domain = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   std::map<int, int> usedDigits; // digit --> iVertex
   std::map<int, std::function<bool()>> squareRootCheckers;
+
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(domain.begin(), domain.end(), g);
+
+  std::cout << "domain: " << std::endl;
+  for (const auto &v: domain)
+    std::cout << v << " ";
+  std::cout << std::endl;
 
   squareRootCheckers.emplace(0, std::bind(FullSquareRootChecker::Check1,
       &vertices[0]));
@@ -69,23 +80,22 @@ int main() {
     std::cout << std::endl;
 
     bool isAssigned = false;
-    int iLastConflict = -1;
 
     for (int iVal = assignments[iVertex] + 1; iVal < domain.size(); ++iVal) {
       auto itConflict = usedDigits.find(domain[iVal]);
-      
+
       if (itConflict != usedDigits.end()) {
-        iLastConflict = std::max(iLastConflict, itConflict->second);
+        conflicts[iVertex] = std::max(conflicts[iVertex], itConflict->second);
         continue;
       }
 
       assignments[iVertex] = iVal;
       vertices[iVertex] = domain[iVal];
-    
+
       if (squareRootCheckers.find(iVertex) != squareRootCheckers.end())
         if (!squareRootCheckers[iVertex]())
           continue;
-    
+
       isAssigned = true;
       usedDigits.emplace(domain[iVal], iVertex);
       break;
@@ -94,19 +104,19 @@ int main() {
     if (isAssigned)
       continue;
 
-    if (iLastConflict < 0)
-      iLastConflict = iVertex - 1;
+    if (conflicts[iVertex] < 0)
+      conflicts[iVertex] = iVertex - 1;
 
-    for (int iReset = iLastConflict + 1; iReset < iVertex; ++iReset) {
+    for (int iReset = conflicts[iVertex] + 1; iReset < iVertex; ++iReset) {
       usedDigits.erase(vertices[iReset]);
       assignments[iReset] = -1;
       vertices[iReset] = -1;
     }
 
-    usedDigits.erase(vertices[iLastConflict]);
+    usedDigits.erase(vertices[conflicts[iVertex]]);
     assignments[iVertex] = -1;
     vertices[iVertex] = -1;
-    iVertex = iLastConflict - 1; // -1 because of increment in the end of for-cycle
+    iVertex = conflicts[iVertex] - 1; // -1 because of increment in the end of for-cycle
   }
 
   for (int i = 0; i < vertices.size(); ++i)
