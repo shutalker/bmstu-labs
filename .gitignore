@@ -31,6 +31,10 @@
 # VSCode
 **/.vscode
 
+# python venv
+**/env
+
 **/*.png
 **/*.txt
 **/.directory
+**/*.dat
